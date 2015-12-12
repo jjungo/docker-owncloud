@@ -32,11 +32,10 @@ RUN pacman -Sy \
 
 # add our custom config.php
 ADD configs/oc-config.php /usr/share/webapps/owncloud/config/config.php
-
 # fixup the permissions (because appairently the package maintainer can't get it right)
 ADD fixPerms.sh /root/fixPerms.sh
-RUN chmod +x /root/fixPerms.sh \
-    && /root/fixPerms.sh
+RUN chmod +x /root/fixPerms.sh
+RUN /root/fixPerms.sh
 
 # Install owncloud addons
 RUN pacman -S --noconfirm --needed owncloud-app-bookmarks \
@@ -55,10 +54,11 @@ RUN sed -i 's,^DAVLockDB /home/httpd/DAV/DAVLock,#&,g' /etc/httpd/conf/httpd.con
     && sed -i "s,php_value upload_max_filesize 513M,php_value upload_max_filesize ${MAX_UPLOAD_SIZE},g" /usr/share/webapps/owncloud/.htaccess \
     && sed -i "s,php_value post_max_size 513M,php_value post_max_size ${MAX_UPLOAD_SIZE},g" /usr/share/webapps/owncloud/.htaccess \
     && sed -i 's,<IfModule mod_php5.c>,<IfModule mod_php5.c>\nphp_value output_buffering Off,g' /usr/share/webapps/owncloud/.htaccess \
-
     # set up PHP for owncloud
-    && sed -i 's/open_basedir = \/srv\/http\/:\/home\/:\/tmp\/:\/usr\/share\/pear\/:\/usr\/share\/webapps\//open_basedir = \/srv\/http\/:\/home\/:\/tmp\/:\/usr\/share\/pear\/:\/usr\/share\/webapps\/:\/etc\/webapps\//g' /etc/php/php.ini  # fixes issue with config not editable and occ errors (Issue #44) \
-    && sed -i 's/;extension=posix.so/extension=posix.so/g' /etc/php/php.ini  # needed for cron / occ (Issue #42) \
+    # fixes issue with config not editable and occ errors (Issue #44)
+    && sed -i 's/open_basedir = \/srv\/http\/:\/home\/:\/tmp\/:\/usr\/share\/pear\/:\/usr\/share\/webapps\//open_basedir = \/srv\/http\/:\/home\/:\/tmp\/:\/usr\/share\/pear\/:\/usr\/share\/webapps\/:\/etc\/webapps\//g' /etc/php/php.ini \
+    # needed for cron / occ (Issue #42)
+    && sed -i 's/;extension=posix.so/extension=posix.so/g' /etc/php/php.ini \
 
     # setup Apache for owncloud
     && cp /etc/webapps/owncloud/apache.example.conf /etc/httpd/conf/extra/owncloud.conf \
